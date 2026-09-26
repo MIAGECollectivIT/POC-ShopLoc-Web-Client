@@ -1,0 +1,35 @@
+<main class="container py-4">
+  <div class="mb-4">
+    <a routerLink="/" class="btn btn-outline-secondary btn-sm">
+      &larr; Retour aux boutiques
+    </a>
+  </div>
+
+  @if (loading()) {
+    <p>Chargement...</p>
+  } @else if (error(); as message) {
+    <p class="alert alert-danger" role="alert">{{ message }}</p>
+  } @else if (shop(); as currentShop) {
+    <div class="card">
+      @if (currentShop.url) {
+        <img
+          [src]="currentShop.url"
+          [alt]="currentShop.name"
+          class="card-img-top object-fit-cover"
+          style="max-height: 400px;"
+        />
+      }
+      <div class="card-body">
+        <h1 class="card-title h2 mb-3">{{ currentShop.name }}</h1>
+        <p class="card-text text-muted mb-2">
+          <strong>Adresse :</strong> {{ currentShop.address }}
+        </p>
+        @if (currentShop.id) {
+          <p class="card-text text-muted">
+            <strong>Identifiant :</strong> #{{ currentShop.id }}
+          </p>
+        }
+      </div>
+    </div>
+  }
+</main>

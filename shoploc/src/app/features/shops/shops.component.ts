@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Shop } from '../../core/models/shop.model';
 import { ShopService } from '../../core/services/shop.service';
 
 @Component({
-  imports: [],
+  imports: [RouterLink],
   selector: 'app-shops',
   templateUrl: './shops.component.html',
 })
