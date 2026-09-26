@@ -22,7 +22,7 @@ describe('App', () => {
   it('should render title', async () => {
     const fixture = TestBed.createComponent(ShopsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
-    httpTesting.expectOne('/api/shops').flush([]);
+    httpTesting.expectOne('http://localhost:8080/api/shops').flush([]);
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Liste des boutiques');
   });
