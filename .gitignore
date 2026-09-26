@@ -1,8 +1,7 @@
 # Created by https://www.toptal.com/developers/gitignore/api/intellij,visualstudio,visualstudiocode,macos,linux,java,angular,windows,maven,gradle,eclipse
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij,visualstudio,visualstudiocode,macos,linux,java,angular,windows,maven,gradle,eclipse
 
-## Additionnals ingores
-package-lock.json
+!shoploc/package-lock.json
 
 
 

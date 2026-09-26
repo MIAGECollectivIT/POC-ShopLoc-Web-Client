@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shoploc-webclient
+  namespace: shoploc
+  labels:
+    app: shoploc-webclient
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shoploc-webclient
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: shoploc-webclient
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: webclient
+          image: ghcr.io/miagecollectivit/shoploc-web-client:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shoploc-webclient
+  namespace: shoploc
+  labels:
+    app: shoploc-webclient
+spec:
+  type: ClusterIP
+  selector:
+    app: shoploc-webclient
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP

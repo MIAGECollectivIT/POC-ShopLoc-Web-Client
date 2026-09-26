@@ -24,7 +24,7 @@ describe('App', () => {
   it('should render title', async () => {
     const fixture = TestBed.createComponent(ShopsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
-    httpTesting.expectOne('http://localhost:8080/api/shops').flush([]);
+    httpTesting.expectOne('/api/shops').flush([]);
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Liste des boutiques');
   });
@@ -32,7 +32,7 @@ describe('App', () => {
   it('should render shop cards with images', async () => {
     const fixture = TestBed.createComponent(ShopsComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
-    httpTesting.expectOne('http://localhost:8080/api/shops').flush([
+    httpTesting.expectOne('/api/shops').flush([
       { id: 1, name: 'Boutique Test', address: '1 rue Test', url: 'https://example.com/test.jpg' }
     ]);
     fixture.detectChanges();
@@ -66,7 +66,7 @@ describe('App', () => {
 
     const fixture = TestBed.createComponent(ShopDetailComponent);
     const httpTesting = TestBed.inject(HttpTestingController);
-    httpTesting.expectOne('http://localhost:8080/api/shops/1').flush({
+    httpTesting.expectOne('/api/shops/1').flush({
       id: 1,
       name: 'Burger King Lille',
       address: '10 Rue Nationale, 59000 Lille',
