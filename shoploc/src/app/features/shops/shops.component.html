@@ -1,5 +1,5 @@
-<main class="container mt-4">
-  <h1>Liste des boutiques</h1>
+<main class="container py-4">
+  <h1 class="mb-4">Liste des boutiques</h1>
 
   @if (loading()) {
     <p>Chargement...</p>
@@ -8,12 +8,25 @@
   } @else if (shops().length === 0) {
     <p>Aucune boutique trouvée.</p>
   } @else {
-    <ul class="list-group">
-      @for (shop of shops(); track $index) {
-        <li class="list-group-item">
-          <pre class="mb-0">{{ shop | json }}</pre>
-        </li>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      @for (shop of shops(); track shop.id ?? $index) {
+        <div class="col">
+          <div class="card h-100">
+            @if (shop.url) {
+              <img
+                [src]="shop.url"
+                [alt]="shop.name"
+                class="card-img-top object-fit-cover"
+                style="height: 180px;"
+              />
+            }
+            <div class="card-body">
+              <h5 class="card-title">{{ shop.name }}</h5>
+              <p class="card-text text-muted">{{ shop.address }}</p>
+            </div>
+          </div>
+        </div>
       }
-    </ul>
+    </div>
   }
 </main>

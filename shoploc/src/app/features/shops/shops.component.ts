@@ -1,10 +1,9 @@
-import { JsonPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { Shop } from '../../core/models/shop.model';
 import { ShopService } from '../../core/services/shop.service';
 
 @Component({
-  imports: [JsonPipe],
+  imports: [],
   selector: 'app-shops',
   templateUrl: './shops.component.html',
 })
