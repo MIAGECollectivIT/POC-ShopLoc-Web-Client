@@ -107,3 +107,30 @@ npm run build
 npm install
 ```
 Un hook pre-commit s'exécute automatiquement lors de chaque commit pour formater et valider le code.
+
+---
+
+## 7. Déploiement Continu (CI/CD) sur Cluster K3s
+
+Le pipeline de déploiement continu (`.github/workflows/deploy.yml`) se déclenche à chaque push ou merge sur `main` :
+
+1. **Vérification de la compilation** : `npm ci` et `npm run build -- --configuration production` avec Node.js 22.
+2. **Build Docker Multi-stage ARM64 & Push GHCR** :
+   - Émulation ARM64 (QEMU / Buildx) pour le processeur Ampere A1 du serveur de production.
+   - Stage 1 : Compilation Angular dans un conteneur Node 22.
+   - Stage 2 : Injection des bundles dans Nginx Alpine optimisé avec support du routage SPA (`try_files $uri $uri/ /index.html;`).
+   - Publication sécurisée de l'image vers GitHub Container Registry (`ghcr.io/miagecollectivit/shoploc-web-client:latest`).
+3. **Déploiement K3s sans coupure** :
+   - Connexion SSH sur la VM de production (`shoploc-server`).
+   - Application du manifest `shoploc-webclient.yaml`.
+   - Exécution de `kubectl rollout restart deployment/shoploc-webclient -n shoploc` et validation de la sonde de disponibilité (`rollout status`).
+
+### 🔐 Secrets d'Organisation Requis
+
+Le pipeline utilise les secrets partagés définis au niveau de l'organisation GitHub (`MIAGECollectivIT > Settings > Secrets and variables > Actions`) :
+- **`SSH_HOST`** : IP publique de la machine de production (`88.96.39.138`).
+- **`SSH_USER`** : Compte système (`ubuntu`).
+- **`SSH_KEY`** : Clé privée OpenSSH autorisée sur la VM.
+
+> [!IMPORTANT]
+> **Règle pour les nouveaux dépôts** : Si les secrets d'organisation sont configurés avec la politique *Selected repositories*, le dépôt `ShopLoc-Web-Client` (ainsi que chaque nouveau microservice créé) doit être explicitement coché dans la liste des dépôts autorisés pour ces 3 variables.
