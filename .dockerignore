@@ -1,8 +1,9 @@
 .git
 .github
 .husky
-node_modules
-dist
+**/node_modules
+**/.next
+**/dist
 .vscode
 .idea
 Dockerfile*

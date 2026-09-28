@@ -1,0 +1,64 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { ShopCard } from "../components/ShopCard";
+import { Badge } from "../components/ui/badge";
+import { getShops } from "../lib/api";
+import { AlertCircle, Store } from "lucide-react";
+import type { Shop } from "../types/shop";
+
+let shops: Shop[] = [];
+let error: string | null = null;
+
+try {
+  shops = await getShops();
+} catch (err: unknown) {
+  console.error("Erreur lors de la récupération des boutiques:", err);
+  error = "Impossible de récupérer les données des boutiques.";
+}
+---
+
+<Layout title="Liste des boutiques — ShopLoc">
+  <main class="container mx-auto px-4 sm:px-6 py-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-4 border-b">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Liste des boutiques</h1>
+        <p class="text-muted-foreground mt-1">
+          Découvrez l'ensemble des commerçants et boutiques partenaires de votre municipalité
+        </p>
+      </div>
+      {!error && (
+        <Badge variant="secondary" className="self-start sm:self-auto text-sm px-3 py-1">
+          {shops.length} {shops.length > 1 ? "boutiques" : "boutique"}
+        </Badge>
+      )}
+    </div>
+
+    {error && (
+      <div class="rounded-xl border border-destructive/30 bg-destructive/10 p-6 flex items-start gap-3 text-destructive">
+        <AlertCircle className="size-5 shrink-0 mt-0.5" />
+        <div>
+          <h3 class="font-semibold">Erreur de chargement</h3>
+          <p class="text-sm opacity-90">{error}</p>
+        </div>
+      </div>
+    )}
+
+    {!error && shops.length === 0 && (
+      <div class="text-center py-16 border rounded-2xl bg-muted/30">
+        <Store className="size-12 mx-auto text-muted-foreground/60 mb-3" />
+        <h2 class="text-lg font-semibold">Aucune boutique trouvée</h2>
+        <p class="text-sm text-muted-foreground mt-1">
+          Aucun commerce n'est enregistré pour le moment.
+        </p>
+      </div>
+    )}
+
+    {!error && shops.length > 0 && (
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {shops.map((shop, index) => (
+          <ShopCard key={shop.id ?? index} shop={shop} />
+        ))}
+      </div>
+    )}
+  </main>
+</Layout>

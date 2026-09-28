@@ -1,0 +1,101 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { Badge } from "../../components/ui/badge";
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import { buttonVariants } from "../../components/ui/button";
+import { getShopById } from "../../lib/api";
+import { ArrowLeft, AlertCircle, MapPin, Store, ShieldCheck } from "lucide-react";
+import type { Shop } from "../../types/shop";
+
+const { id } = Astro.params;
+
+let shop: Shop | null = null;
+let error: string | null = null;
+
+if (!id) {
+  error = "Identifiant de boutique manquant.";
+} else {
+  try {
+    shop = await getShopById(id);
+  } catch (err: unknown) {
+    console.error("Erreur lors de la récupération de la boutique:", err);
+    error = "Impossible de récupérer les détails de cette boutique.";
+  }
+}
+---
+
+<Layout title={shop ? `${shop.name} — ShopLoc` : "Détail boutique — ShopLoc"}>
+  <main class="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
+    <div class="mb-6">
+      <a
+        href="/"
+        class={buttonVariants({ variant: "ghost", size: "sm", className: "gap-2" })}
+      >
+        <ArrowLeft className="size-4" />
+        Retour à la liste des boutiques
+      </a>
+    </div>
+
+    {error && (
+      <div class="rounded-xl border border-destructive/30 bg-destructive/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-start gap-3 text-destructive">
+          <AlertCircle className="size-5 shrink-0 mt-0.5" />
+          <div>
+            <h3 class="font-semibold">Boutique introuvable</h3>
+            <p class="text-sm opacity-90">{error}</p>
+          </div>
+        </div>
+        <a href="/" class={buttonVariants({ variant: "outline", size: "sm" })}>
+          Retour aux boutiques
+        </a>
+      </div>
+    )}
+
+    {!error && shop && (
+      <Card className="overflow-hidden border shadow-sm">
+        <div class="relative h-72 sm:h-96 w-full bg-muted flex items-center justify-center overflow-hidden">
+          {shop.url ? (
+            <img
+              src={shop.url}
+              alt={shop.name}
+              class="h-full w-full object-cover"
+            />
+          ) : (
+            <div class="flex flex-col items-center justify-center text-muted-foreground gap-3">
+              <Store className="size-16 opacity-40" />
+              <span class="text-sm font-medium">Aucune image disponible</span>
+            </div>
+          )}
+          {shop.id && (
+            <Badge
+              variant="secondary"
+              className="absolute top-4 right-4 bg-background/85 backdrop-blur-xs font-mono text-sm px-3 py-1"
+            >
+              #{shop.id}
+            </Badge>
+          )}
+        </div>
+
+        <CardHeader className="p-6 sm:p-8 flex flex-row items-center justify-between gap-4 border-b">
+          <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {shop.name}
+          </CardTitle>
+          <Badge className="bg-emerald-600 text-white gap-1.5 px-3 py-1 shrink-0">
+            <ShieldCheck className="size-3.5" />
+            Partenaire vérifié
+          </Badge>
+        </CardHeader>
+
+        <CardContent className="p-6 sm:p-8 flex flex-col gap-3">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Localisation
+          </h2>
+          <div class="flex items-start gap-2.5 text-base">
+            <MapPin className="size-5 shrink-0 text-red-500 mt-0.5" />
+            <span>{shop.address}</span>
+          </div>
+        </CardContent>
+      </Card>
+    )}
+  </main>
+</Layout>

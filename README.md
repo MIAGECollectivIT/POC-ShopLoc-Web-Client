@@ -1,136 +1,240 @@
-# MIAGE Collectiv'IT — ShopLoc (Front-end Web Client)
+# MIAGE Collectiv'IT - ShopLoc (Front-End Web Client)
 
-Projet réalisé dans le cadre du cours de GLOP (Génie Logiciel par la Pratique), visant à proposer une application de fidélité pour l'ensemble des commerçants d'une municipalité.
-
----
-
-## 1. Architecture et Coexistence Frontend / Backend
-
-Le projet global est découpé en deux dépôts indépendants :
-- **Backend (`Service-Shop`)** : API REST Spring Boot + base de données PostgreSQL gérés par leur propre `compose.yaml`.
-- **Frontend (`ShopLoc-Web-Client`)** : Application Angular servie par un conteneur Nginx via son propre `compose.yaml`.
-
-### Répartition des ports sur la machine hôte (`localhost`) :
-
-| Composant | Port hôte | Rôle |
-|---|---|---|
-| **Frontend Angular** (`ShopLoc-Web-Client`) | `4200` | Interface utilisateur web (Nginx) |
-| **Backend API** (`Service-Shop`) | `8080` | API REST Spring Boot (`/api/shops`) |
-| **Base PostgreSQL** (`Service-Shop`) | `5432` | Données relationnelles |
-
-> **Coexistence :** Les deux environnements Docker tournent en parallèle sans aucun conflit de port. L'application Angular s'exécutant dans le navigateur du client, elle communique directement avec l'API backend sur `http://localhost:8080`.
+ShopLoc is a municipal loyalty and local commerce web platform developed as part of the GLOP (*Génie Logiciel par la Pratique*) course. The application allows citizens to discover partner stores, view detailed merchant profiles, and participate in local loyalty initiatives.
 
 ---
 
-## 2. Démarrage rapide avec Docker Compose (Recommandé)
+## 1. Technology Stack (From A to Z)
 
-### Étape 1 : Démarrer le Backend (`Service-Shop`)
-Dans un terminal, démarrez les conteneurs backend et base de données :
-```bash
-cd Service-Shop
-docker compose up --build -d
-```
-Vérifiez que l'API répond :
-```bash
-curl http://localhost:8080/api/shops
-```
+The frontend is architected around modern web standards prioritizing extreme performance, minimal resource consumption (eco-design), and a clean developer experience.
 
-### Étape 2 : Démarrer le Frontend (`ShopLoc-Web-Client`)
-Dans un second terminal (ou depuis la racine du frontend) :
-```bash
-cd ShopLoc-Web-Client
-docker compose up --build -d
-```
+### Astro 5 (Core Web Framework)
+[Astro](https://astro.build/) serves as the foundational fullstack framework.
+- **Server-Side Rendering (SSR)**: Configured in `output: 'server'` mode using `@astrojs/node` standalone adapter. Pages are rendered dynamically on the server upon incoming requests, allowing real-time data fetching from the Spring Boot API.
+- **Islands Architecture (Zero JS by Default)**: Unlike traditional Single Page Applications (SPAs) or frameworks like Next.js that hydrate the entire DOM with a JavaScript runtime, Astro compiles all pages and React components to **pure static HTML and CSS**. The client browser receives 0 KB of runtime JavaScript by default.
+- **File-Based Routing**:
+  - `src/pages/index.astro` maps to `/`.
+  - `src/pages/shops/[id].astro` dynamically maps to `/shops/:id`.
+  - Dynamic redirects (such as `src/pages/produits/[id].astro`) handle legacy aliases cleanly.
+- **Component Syntax (`.astro`)**:
+  - **Code Fence (`---`)**: Runs exclusively on the server at request time (fetching data, importing components, parsing parameters).
+  - **Template Area**: JSX-like HTML markup rendered to the response stream.
 
-### Étape 3 : Accéder à l'application
-Ouvrez votre navigateur sur : **[http://localhost:4200](http://localhost:4200)**
+### React 19 (`@astrojs/react`)
+React is integrated seamlessly into Astro to enable component-driven UI development.
+- React components (such as Shadcn cards and buttons) are pre-rendered into static HTML on the server.
+- When client-side interactivity is required, Astro allows opting into partial hydration using client directives (`client:load`, `client:visible`, etc.).
 
-- Liste des boutiques : `http://localhost:4200/`
-- Détails d'une boutique : `http://localhost:4200/shops/:id`
+### Shadcn UI (Base-Nova)
+[Shadcn UI](https://ui.shadcn.com/) provides high-quality, accessible UI primitives.
+- **Not an NPM Dependency**: Components are added directly as source code into `src/components/ui/`, granting complete control over styling, accessibility, and behavior.
+- **Strict Composition**: Follows atomic component patterns (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
+- **Installed Components**:
+  - `card.tsx`: Structured layout containers for merchants.
+  - `button.tsx`: Variant-driven buttons and accessible link anchors (`buttonVariants`).
+  - `badge.tsx`: Status and identifier labels.
+
+### Tailwind CSS v4
+[Tailwind CSS v4](https://tailwindcss.com/) powers the design system.
+- **Vite Integration**: Uses `@tailwindcss/vite` for instantaneous Hot Module Replacement (HMR).
+- **CSS-First Configuration**: Design tokens, color palettes, and container queries are configured directly in `src/styles/globals.css` using modern `@theme inline` blocks and the OKLCH color space.
+
+### Lucide React
+[Lucide React](https://lucide.dev/) delivers lightweight, accessible, tree-shakable SVG icons (`Store`, `MapPin`, `ShieldCheck`, `ArrowLeft`, etc.).
+
+### TypeScript
+End-to-end type safety across the entire application:
+- Centralized data models (`src/types/shop.ts`).
+- Strongly-typed API client contracts.
+- Static checking of Astro props and component attributes.
 
 ---
 
-## 3. Commandes utiles Docker pour le Frontend
+## 2. Project Directory Structure
 
-- **Afficher les logs en temps réel :**
+```text
+ShopLoc-Web-Client/
+├── compose.yaml              # Docker Compose service definition
+├── Dockerfile                # Multi-stage production container build
+├── README.md                 # Project documentation
+└── shoploc/                  # Astro frontend root
+    ├── astro.config.mjs      # Astro configuration (SSR, React, Tailwind, Node adapter)
+    ├── components.json       # Shadcn UI CLI configuration
+    ├── package.json          # Node dependencies and scripts
+    ├── public/               # Static assets (favicons, public images)
+    ├── src/
+    │   ├── components/
+    │   │   ├── ui/           # Atomic Shadcn components (button, card, badge)
+    │   │   └── ShopCard.tsx  # Domain component: merchant card
+    │   ├── layouts/
+    │   │   └── Layout.astro  # Base HTML shell with navigation header and slot
+    │   ├── lib/
+    │   │   ├── api.ts        # Spring Boot REST API client
+    │   │   └── utils.ts      # Class merging helper (cn utility)
+    │   ├── pages/
+    │   │   ├── index.astro         # Store directory page (SSR)
+    │   │   ├── shops/[id].astro    # Merchant profile detail page (SSR)
+    │   │   └── produits/[id].astro # Redirect handler
+    │   ├── styles/
+    │   │   └── globals.css   # Tailwind v4 theme, design tokens, and base styles
+    │   └── types/
+    │       └── shop.ts       # TypeScript interfaces (Shop model)
+    └── dist/                 # Production build output
+```
+
+---
+
+## 3. Architecture and System Coexistence
+
+The complete ShopLoc solution consists of two decoupled repositories operating side by side:
+- **Backend (`Service-Shop`)**: Spring Boot 3 REST API + PostgreSQL database.
+- **Frontend (`ShopLoc-Web-Client`)**: Astro SSR application.
+
+### Host Port Mapping (`localhost`):
+
+| Service | Host Port | Internal Port | Description |
+|---|---|---|---|
+| **ShopLoc Web Client** | `3000` | `3000` | Astro SSR frontend container |
+| **Service-Shop Backend** | `8080` | `8080` | Spring Boot REST API (`/api/shops`) |
+| **PostgreSQL Database** | `5432` | `5432` | PostgreSQL relational storage |
+
+### Cross-Origin & Container Networking:
+- **CORS**: The Spring Boot backend explicitly authorizes requests originating from `http://localhost:3000`.
+- **Docker Bridge**: When running the frontend inside Docker, `compose.yaml` uses `extra_hosts: ["host.docker.internal:host-gateway"]` to route server-side requests from the Astro container to the backend running on the host machine.
+
+---
+
+## 4. How to Use Astro in this Project
+
+### Understanding the `.astro` Page Lifecycle
+Every `.astro` file in `src/pages/` represents a route. When a user requests a URL:
+1. The code between the `---` fences runs exclusively on the Node.js server.
+2. Data is fetched from the backend REST API via `await getShops()`.
+3. If an error occurs, it is captured on the server and an accessible error state is prepared.
+4. The template renders down to plain HTML and is streamed to the user's browser.
+
+Example of an Astro page (`src/pages/index.astro`):
+```astro
+---
+import Layout from "../layouts/Layout.astro";
+import { ShopCard } from "../components/ShopCard";
+import { getShops } from "../lib/api";
+
+// 1. Server execution: data fetching
+const shops = await getShops();
+---
+
+<!-- 2. Template execution: server-rendered HTML -->
+<Layout title="Shops Directory">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {shops.map((shop) => (
+      <ShopCard shop={shop} />
+    ))}
+  </div>
+</Layout>
+```
+
+### Adding Interactive Islands
+By default, React components in Astro render static HTML without client-side JavaScript. If a component requires client interactivity (e.g., modals, search filters, state toggles), add an Astro client directive:
+
+```astro
+<!-- Hydrates immediately upon page load -->
+<InteractiveFilter client:load />
+
+<!-- Hydrates only when scrolled into the viewport -->
+<MerchantReviewCarousel client:visible />
+```
+
+### Adding New Shadcn UI Components
+To add a new Shadcn UI component, run the following command from the `shoploc` directory:
+```bash
+cd shoploc
+npx shadcn@latest add dialog
+```
+The CLI automatically places the component source code in `src/components/ui/` configured to work with the project's Tailwind v4 tokens.
+
+---
+
+## 5. Development and Execution Guide
+
+### Option 1: Quick Start with Docker Compose (Recommended)
+
+1. **Start the Backend (`Service-Shop`)**:
+   ```bash
+   cd Service-Shop
+   docker compose up --build -d
+   ```
+   Confirm the backend is operational:
+   ```bash
+   curl http://localhost:8080/api/shops
+   ```
+
+2. **Start the Frontend (`ShopLoc-Web-Client`)**:
+   ```bash
+   cd ShopLoc-Web-Client
+   docker compose up --build -d
+   ```
+
+3. **Open the Application**:
+   Navigate to **[http://localhost:3000](http://localhost:3000)** in your browser.
+   - Home / Stores directory: `http://localhost:3000/`
+   - Store detail view: `http://localhost:3000/shops/1`
+
+### Option 2: Local Development (Without Docker)
+
+For instant Hot Module Replacement during development:
+
+```bash
+cd ShopLoc-Web-Client/shoploc
+
+# 1. Install dependencies
+npm install
+
+# 2. Start Astro development server
+npm run dev
+```
+The development server will be accessible at **[http://localhost:3000](http://localhost:3000)**.
+
+---
+
+## 6. Build and Verification Commands
+
+From the `shoploc` directory:
+
+| Command | Action |
+|---|---|
+| `npm run dev` | Starts Vite-powered local development server with HMR |
+| `npm run build` | Compiles the server-side bundle and assets into `./dist/` |
+| `npm run preview` | Starts the production Node.js server locally against `./dist/` |
+| `npx astro check` | Executes TypeScript and Astro template type verification |
+
+---
+
+## 7. Docker Management
+
+From the `ShopLoc-Web-Client` root directory:
+
+- **Follow container logs in real time**:
   ```bash
   docker compose logs -f
   ```
-- **Arrêter le conteneur frontend :**
+- **Stop containers**:
   ```bash
   docker compose down
   ```
-- **Reconstruire l'image après modification :**
+- **Rebuild and restart after updates**:
   ```bash
   docker compose up --build -d
   ```
 
 ---
 
-## 4. Alternative : Démarrage en mode développement local (sans Docker)
+## 8. Code Quality and Git Hooks (Husky)
 
-Si vous souhaitez travailler sur le code avec le rechargement à chaud (*hot reload*) :
+The repository enforces pre-commit checks through Husky to guarantee code formatting and syntax integrity before commits are recorded.
 
-```bash
-cd ShopLoc-Web-Client/shoploc
-
-# Installation des dépendances
-npm install
-
-# Lancer le serveur de développement Angular
-npm start
-```
-L'application sera accessible sur `http://localhost:4200/`.
-
----
-
-## 5. Tests unitaires et vérification du build
-
-```bash
-cd ShopLoc-Web-Client/shoploc
-
-# Exécuter les tests unitaires
-npm test -- --watch=false
-
-# Vérifier la compilation de production
-npm run build
-```
-
----
-
-## 6. Qualité de code et Git Hooks (Husky)
-
-> **CRITICAL SETUP :** Ne contournez pas l'initialisation à la racine. Les hooks pre-commit Husky sont obligatoires.
-
-À la racine du dépôt `ShopLoc-Web-Client` :
+Initialize hooks once at the root of `ShopLoc-Web-Client`:
 ```bash
 npm install
 ```
-Un hook pre-commit s'exécute automatiquement lors de chaque commit pour formater et valider le code.
-
----
-
-## 7. Déploiement Continu (CI/CD) sur Cluster K3s
-
-Le pipeline de déploiement continu (`.github/workflows/deploy.yml`) se déclenche à chaque push ou merge sur `main` :
-
-1. **Vérification de la compilation** : `npm ci` et `npm run build -- --configuration production` avec Node.js 22.
-2. **Build Docker Multi-stage ARM64 & Push GHCR** :
-   - Émulation ARM64 (QEMU / Buildx) pour le processeur Ampere A1 du serveur de production.
-   - Stage 1 : Compilation Angular dans un conteneur Node 22.
-   - Stage 2 : Injection des bundles dans Nginx Alpine optimisé avec support du routage SPA (`try_files $uri $uri/ /index.html;`).
-   - Publication sécurisée de l'image vers GitHub Container Registry (`ghcr.io/miagecollectivit/shoploc-web-client:latest`).
-3. **Déploiement K3s sans coupure** :
-   - Connexion SSH sur la VM de production (`shoploc-server`).
-   - Application du manifest `shoploc-webclient.yaml`.
-   - Exécution de `kubectl rollout restart deployment/shoploc-webclient -n shoploc` et validation de la sonde de disponibilité (`rollout status`).
-
-### 🔐 Secrets d'Organisation Requis
-
-Le pipeline utilise les secrets partagés définis au niveau de l'organisation GitHub (`MIAGECollectivIT > Settings > Secrets and variables > Actions`) :
-- **`SSH_HOST`** : IP publique de la machine de production (`88.96.39.138`).
-- **`SSH_USER`** : Compte système (`ubuntu`).
-- **`SSH_KEY`** : Clé privée OpenSSH autorisée sur la VM.
-
-> [!IMPORTANT]
-> **Règle pour les nouveaux dépôts** : Si les secrets d'organisation sont configurés avec la politique *Selected repositories*, le dépôt `ShopLoc-Web-Client` (ainsi que chaque nouveau microservice créé) doit être explicitement coché dans la liste des dépôts autorisés pour ces 3 variables.
+Formatting and validation hooks will automatically trigger on subsequent `git commit` commands.

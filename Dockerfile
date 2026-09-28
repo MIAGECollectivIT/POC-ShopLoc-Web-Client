@@ -1,23 +1,27 @@
-# Stage 1 : Build de l'application Angular
-FROM node:22-alpine AS build
+# Stage 1 : Build de l'application Astro
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Cache des dépendances
+# Dépendances avec cache Docker
 COPY shoploc/package*.json ./
 RUN npm ci
 
-# Copie des sources et compilation production
+# Copie du code source et compilation Astro SSR
 COPY shoploc/ ./
-RUN npm run build -- --configuration production
+RUN npm run build
 
-# Stage 2 : Serveur Nginx Alpine de production
-FROM nginx:alpine
-WORKDIR /usr/share/nginx/html
+# Stage 2 : Image d'exécution légère Node.js
+FROM node:22-alpine AS runner
+WORKDIR /app
 
-# Nettoyage et copie des artefacts compilés
-RUN rm -rf ./*
-COPY --from=build /app/dist/shoploc/browser ./
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 3000
+
+CMD ["node", "./dist/server/entry.mjs"]
